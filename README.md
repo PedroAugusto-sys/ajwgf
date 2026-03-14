@@ -23,9 +23,18 @@ Depois abra no navegador: **http://localhost:3000** (ou **http://localhost:8080*
 1. Ajuste os selects e o checkbox de cílios; o preview atualiza na hora.
 2. Use **Sortear aleatório** para uma combinação aleatória.
 
+## Deploy no Netlify
+
+1. Acesse [Netlify](https://app.netlify.com) e faça login.
+2. **Add new site** → **Import an existing project** → **GitHub**.
+3. Conecte o repositório **PedroAugusto-sys/ajwgf**.
+4. O Netlify detecta o `netlify.toml`: **Publish directory** = `.`, **Build command** em branco.
+5. Clique em **Deploy site**. O site ficará em `https://seu-site.netlify.app`.
+
+Não é necessário configurar variáveis de ambiente; o projeto é estático (HTML + JS).
+
 ## Estrutura
 
 - `index.html` — página e lógica do preview (selects, empilhamento, filtros CSS).
-- `data.js` — dados extraídos do gerador (layers, URLs, opções, filtros de cor).
-
-Os arquivos `generator.html`, `generator-source.txt` e `extract.js` foram usados para extrair o código e os dados do Perchance; podem ser removidos se quiser manter só o app.
+- `data.js` — dados (layers, URLs, opções, filtros de cor).
+- `netlify.toml` — configuração de deploy no Netlify.
