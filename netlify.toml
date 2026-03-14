@@ -1,0 +1,4 @@
+# Deploy no Netlify - site estático
+[build]
+  publish = "."
+  command = ""

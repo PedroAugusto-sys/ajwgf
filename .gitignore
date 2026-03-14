@@ -1,0 +1,11 @@
+# Netlify
+.netlify
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Arquivos de extração (opcional - descomente se não quiser subir)
+# generator.html
+# generator-source.txt
+# extract.js
