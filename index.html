@@ -73,22 +73,6 @@
       height: 18px;
       accent-color: #6c8eb8;
     }
-    .color-select-wrap {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-    .color-select-wrap select { flex: 1; min-width: 0; }
-    .color-select-wrap input[type="color"] {
-      width: 36px;
-      height: 32px;
-      padding: 0;
-      border: 1px solid #444;
-      border-radius: 6px;
-      cursor: pointer;
-      background: transparent;
-      flex-shrink: 0;
-    }
     .preview-box {
       background: linear-gradient(180deg, #D7BCE4 0%, #E8D4ED 40%, #F3DDEB 100%);
       border-radius: 12px;
@@ -215,6 +199,53 @@
       opacity: 0.8;
     }
     .footer a { color: #8ab4d4; }
+    .color-picker-block {
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .color-picker-block label { margin-bottom: 0.35rem; }
+    .color-picker-block select { margin-bottom: 0.5rem; }
+    .color-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 0.5rem;
+      min-height: 28px;
+    }
+    .color-swatch {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: #888;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .color-swatch:hover {
+      transform: scale(1.12);
+      border-color: rgba(255,255,255,0.5);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    }
+    .color-swatch.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.4), 0 0 0 4px rgba(108,142,184,0.5);
+      transform: scale(1.08);
+    }
+    .color-swatches-hint {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+      margin-bottom: 0.15rem;
+    }
+    .custom-color input[type="text"] {
+      border-radius: 8px;
+      padding: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -230,12 +261,10 @@
         <label>Olhos (forma)</label>
         <select id="eyeshape"></select>
       </div>
-      <div class="control-group color-row">
+      <div class="control-group color-picker-block">
         <label>Cor dos olhos</label>
-        <div class="color-select-wrap">
-          <select id="eyecolor"></select>
-          <input type="color" id="eyecolorPicker" value="#FFD700" title="Escolher cor">
-        </div>
+        <select id="eyecolor"></select>
+        <div id="eyecolorSwatches" class="color-swatches"></div>
       </div>
       <div class="control-group row">
         <input type="checkbox" id="Eyelashes" checked>
@@ -261,42 +290,32 @@
         <label>Chifres</label>
         <select id="hornshape"></select>
       </div>
-      <div class="control-group color-row">
+      <div class="control-group color-picker-block">
         <label>Cor primária</label>
-        <div class="color-select-wrap">
-          <select id="primarycolor"></select>
-          <input type="color" id="primarycolorPicker" value="#8B4513" title="Escolher cor">
-        </div>
+        <select id="primarycolor"></select>
+        <div id="primarycolorSwatches" class="color-swatches"></div>
       </div>
       <div class="control-group custom-color" id="customPrimaryWrap" style="display:none;">
         <input type="text" id="customPrimaryHex" placeholder="#hex" value="#8B4513">
-        <input type="color" id="customPrimaryColor" value="#8B4513">
       </div>
-      <div class="control-group color-row">
+      <div class="control-group color-picker-block">
         <label>Cor secundária</label>
-        <div class="color-select-wrap">
-          <select id="secondarycolor"></select>
-          <input type="color" id="secondarycolorPicker" value="#654321" title="Escolher cor">
-        </div>
+        <select id="secondarycolor"></select>
+        <div id="secondarycolorSwatches" class="color-swatches"></div>
       </div>
       <div class="control-group custom-color" id="customSecondaryWrap" style="display:none;">
         <input type="text" id="customSecondaryHex" placeholder="#hex" value="#654321">
-        <input type="color" id="customSecondaryColor" value="#654321">
       </div>
-      <div class="control-group color-row">
+      <div class="control-group color-picker-block">
         <label>Cor terciária</label>
-        <div class="color-select-wrap">
-          <select id="tertiarycolor"></select>
-          <input type="color" id="tertiarycolorPicker" value="#228B22" title="Escolher cor">
-        </div>
+        <select id="tertiarycolor"></select>
+        <div id="tertiarycolorSwatches" class="color-swatches"></div>
       </div>
       <div class="control-group custom-color" id="customTertiaryWrap" style="display:none;">
         <input type="text" id="customTertiaryHex" placeholder="#hex" value="#228B22">
-        <input type="color" id="customTertiaryColor" value="#228B22">
       </div>
       <div class="control-group custom-color" id="customEyeWrap" style="display:none;">
         <input type="text" id="customEyeHex" placeholder="#hex" value="#FFD700">
-        <input type="color" id="customEyeColor" value="#FFD700">
       </div>
       <div class="btn-grid">
         <button type="button" class="random-btn" id="randomBtn">Sortear aleatório</button>
@@ -499,9 +518,35 @@
     const STORAGE_KEY = 'ajw-dragon-previewer-state';
     let stateHistory = [];
     let stateBeforeColorChange = null;
-    const colorPickerIds = { eyecolor: 'eyecolorPicker', primarycolor: 'primarycolorPicker', secondarycolor: 'secondarycolorPicker', tertiarycolor: 'tertiarycolorPicker' };
     const customHexIds = { eyecolor: 'customEyeHex', primarycolor: 'customPrimaryHex', secondarycolor: 'customSecondaryHex', tertiarycolor: 'customTertiaryHex' };
-    const customColorIds = { eyecolor: 'customEyeColor', primarycolor: 'customPrimaryColor', secondarycolor: 'customSecondaryColor', tertiarycolor: 'customTertiaryColor' };
+    const swatchContainerIds = { eyecolor: 'eyecolorSwatches', primarycolor: 'primarycolorSwatches', secondarycolor: 'secondarycolorSwatches', tertiarycolor: 'tertiarycolorSwatches' };
+
+    function updateColorSwatches(role) {
+      const container = document.getElementById(swatchContainerIds[role]);
+      if (!container) return;
+      const val = document.getElementById(role).value;
+      if (val === 'custom') { container.innerHTML = ''; return; }
+      const themeKey = getThemeKeyFor(role);
+      if (!themeKey || !colorPalettes[themeKey] || !colorPalettes[themeKey].length) { container.innerHTML = ''; return; }
+      const pal = colorPalettes[themeKey];
+      let currentIdx = colorState[role + 'ColorIndex'];
+      if (currentIdx == null || currentIdx >= pal.length) currentIdx = 0;
+      container.innerHTML = '';
+      for (let i = 0; i < pal.length; i++) {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch' + (i === currentIdx ? ' active' : '');
+        swatch.style.filter = pal[i];
+        swatch.title = 'Cor ' + (i + 1);
+        swatch.addEventListener('click', () => {
+          if (stateBeforeColorChange) { stateHistory.push(stateBeforeColorChange); stateBeforeColorChange = null; updateBackButton(); }
+          colorState[role + 'ColorIndex'] = i;
+          saveState();
+          render();
+          updateColorSwatches(role);
+        });
+        container.appendChild(swatch);
+      }
+    }
 
     function getState() {
       const ids = ['eyeshape','tail','pattern','wings','mane','hornshape','eyecolor','primarycolor','secondarycolor','tertiarycolor'];
@@ -532,31 +577,15 @@
         if (state[id] && selects[id].includes(state[id])) sel.value = state[id];
       });
       if (typeof state.Eyelashes === 'boolean') document.getElementById('Eyelashes').checked = state.Eyelashes;
-      if (state.customPrimaryHex) {
-        const hex = normHex(state.customPrimaryHex, '#8B4513');
-        document.getElementById('customPrimaryHex').value = hex;
-        document.getElementById('customPrimaryColor').value = hex;
-      }
-      if (state.customSecondaryHex) {
-        const hex = normHex(state.customSecondaryHex, '#654321');
-        document.getElementById('customSecondaryHex').value = hex;
-        document.getElementById('customSecondaryColor').value = hex;
-      }
-      if (state.customTertiaryHex) {
-        const hex = normHex(state.customTertiaryHex, '#228B22');
-        document.getElementById('customTertiaryHex').value = hex;
-        document.getElementById('customTertiaryColor').value = hex;
-      }
-      if (state.customEyeHex) {
-        const hex = normHex(state.customEyeHex, '#FFD700');
-        document.getElementById('customEyeHex').value = hex;
-        document.getElementById('customEyeColor').value = hex;
-      }
+      if (state.customPrimaryHex) document.getElementById('customPrimaryHex').value = normHex(state.customPrimaryHex, '#8B4513');
+      if (state.customSecondaryHex) document.getElementById('customSecondaryHex').value = normHex(state.customSecondaryHex, '#654321');
+      if (state.customTertiaryHex) document.getElementById('customTertiaryHex').value = normHex(state.customTertiaryHex, '#228B22');
+      if (state.customEyeHex) document.getElementById('customEyeHex').value = normHex(state.customEyeHex, '#FFD700');
       colorRoles.forEach(r => {
         if (state[r + 'ColorIndex'] != null) colorState[r + 'ColorIndex'] = state[r + 'ColorIndex'];
         if (state[r + 'ResolvedTheme'] != null) colorState[r + 'ResolvedTheme'] = state[r + 'ResolvedTheme'];
       });
-      colorRoles.forEach(role => syncPickerFromCustom(role));
+      colorRoles.forEach(role => updateColorSwatches(role));
     }
 
     function saveState() {
@@ -582,34 +611,19 @@
       document.getElementById('customSecondaryWrap').style.display = document.getElementById('secondarycolor').value === 'custom' ? 'grid' : 'none';
       document.getElementById('customTertiaryWrap').style.display = document.getElementById('tertiarycolor').value === 'custom' ? 'grid' : 'none';
       document.getElementById('customEyeWrap').style.display = document.getElementById('eyecolor').value === 'custom' ? 'grid' : 'none';
-      colorRoles.forEach(role => syncPickerFromCustom(role));
+      colorRoles.forEach(role => updateColorSwatches(role));
     }
 
     function syncColorInputs() {
-      const pairs = [
-        ['customPrimaryColor','customPrimaryHex','primarycolor'],
-        ['customSecondaryColor','customSecondaryHex','secondarycolor'],
-        ['customTertiaryColor','customTertiaryHex','tertiarycolor'],
-        ['customEyeColor','customEyeHex','eyecolor']
-      ];
-      pairs.forEach(([colorId, hexId, role]) => {
-        const colorEl = document.getElementById(colorId);
+      colorRoles.forEach(role => {
+        const hexId = customHexIds[role];
         const hexEl = document.getElementById(hexId);
-        colorEl.addEventListener('focus', () => { stateBeforeColorChange = getState(); });
+        if (!hexEl) return;
         hexEl.addEventListener('focus', () => { stateBeforeColorChange = getState(); });
-        colorEl.addEventListener('input', () => {
-          if (stateBeforeColorChange) { stateHistory.push(stateBeforeColorChange); stateBeforeColorChange = null; updateBackButton(); }
-          hexEl.value = colorEl.value;
-          saveState();
-          render();
-        });
         hexEl.addEventListener('input', () => {
           const v = hexEl.value.replace(/^#/,'');
           if (/^[0-9A-Fa-f]{6}$/.test(v)) {
             if (stateBeforeColorChange) { stateHistory.push(stateBeforeColorChange); stateBeforeColorChange = null; updateBackButton(); }
-            colorEl.value = '#' + v;
-            const pickerId = colorPickerIds[role];
-            if (pickerId) document.getElementById(pickerId).value = '#' + v;
             saveState();
             render();
           }
@@ -634,39 +648,7 @@
           if (el.value !== 'Any') colorState[id + 'ResolvedTheme'] = null;
         }
         toggleCustomColor();
-        syncPickerFromCustom(id);
-        saveState();
-        render();
-      });
-    });
-
-    function syncPickerFromCustom(role) {
-      if (document.getElementById(role).value !== 'custom') return;
-      const hexId = customHexIds[role], pickerId = colorPickerIds[role];
-      if (hexId && pickerId) {
-        const hex = document.getElementById(hexId).value;
-        if (/^#[0-9A-Fa-f]{6}$/.test(hex)) document.getElementById(pickerId).value = hex;
-      }
-    }
-    function applyColorFromPicker(role) {
-      const picker = document.getElementById(colorPickerIds[role]);
-      const hexEl = document.getElementById(customHexIds[role]);
-      const colorEl = document.getElementById(customColorIds[role]);
-      if (!picker || !hexEl) return;
-      const hex = picker.value;
-      document.getElementById(role).value = 'custom';
-      hexEl.value = hex;
-      colorEl.value = hex;
-    }
-    colorRoles.forEach(role => {
-      const pickerId = colorPickerIds[role];
-      if (!pickerId) return;
-      const picker = document.getElementById(pickerId);
-      picker.addEventListener('input', () => {
-        stateHistory.push(getState());
-        updateBackButton();
-        applyColorFromPicker(role);
-        toggleCustomColor();
+        updateColorSwatches(id);
         saveState();
         render();
       });
