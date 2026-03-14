@@ -73,6 +73,22 @@
       height: 18px;
       accent-color: #6c8eb8;
     }
+    .color-select-wrap {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .color-select-wrap select { flex: 1; min-width: 0; }
+    .color-select-wrap input[type="color"] {
+      width: 36px;
+      height: 32px;
+      padding: 0;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      background: transparent;
+      flex-shrink: 0;
+    }
     .preview-box {
       background: linear-gradient(180deg, #D7BCE4 0%, #E8D4ED 40%, #F3DDEB 100%);
       border-radius: 12px;
@@ -214,9 +230,12 @@
         <label>Olhos (forma)</label>
         <select id="eyeshape"></select>
       </div>
-      <div class="control-group">
+      <div class="control-group color-row">
         <label>Cor dos olhos</label>
-        <select id="eyecolor"></select>
+        <div class="color-select-wrap">
+          <select id="eyecolor"></select>
+          <input type="color" id="eyecolorPicker" value="#FFD700" title="Escolher cor">
+        </div>
       </div>
       <div class="control-group row">
         <input type="checkbox" id="Eyelashes" checked>
@@ -242,25 +261,34 @@
         <label>Chifres</label>
         <select id="hornshape"></select>
       </div>
-      <div class="control-group">
+      <div class="control-group color-row">
         <label>Cor primária</label>
-        <select id="primarycolor"></select>
+        <div class="color-select-wrap">
+          <select id="primarycolor"></select>
+          <input type="color" id="primarycolorPicker" value="#8B4513" title="Escolher cor">
+        </div>
       </div>
       <div class="control-group custom-color" id="customPrimaryWrap" style="display:none;">
         <input type="text" id="customPrimaryHex" placeholder="#hex" value="#8B4513">
         <input type="color" id="customPrimaryColor" value="#8B4513">
       </div>
-      <div class="control-group">
+      <div class="control-group color-row">
         <label>Cor secundária</label>
-        <select id="secondarycolor"></select>
+        <div class="color-select-wrap">
+          <select id="secondarycolor"></select>
+          <input type="color" id="secondarycolorPicker" value="#654321" title="Escolher cor">
+        </div>
       </div>
       <div class="control-group custom-color" id="customSecondaryWrap" style="display:none;">
         <input type="text" id="customSecondaryHex" placeholder="#hex" value="#654321">
         <input type="color" id="customSecondaryColor" value="#654321">
       </div>
-      <div class="control-group">
+      <div class="control-group color-row">
         <label>Cor terciária</label>
-        <select id="tertiarycolor"></select>
+        <div class="color-select-wrap">
+          <select id="tertiarycolor"></select>
+          <input type="color" id="tertiarycolorPicker" value="#228B22" title="Escolher cor">
+        </div>
       </div>
       <div class="control-group custom-color" id="customTertiaryWrap" style="display:none;">
         <input type="text" id="customTertiaryHex" placeholder="#hex" value="#228B22">
@@ -470,6 +498,10 @@
 
     const STORAGE_KEY = 'ajw-dragon-previewer-state';
     let stateHistory = [];
+    let stateBeforeColorChange = null;
+    const colorPickerIds = { eyecolor: 'eyecolorPicker', primarycolor: 'primarycolorPicker', secondarycolor: 'secondarycolorPicker', tertiarycolor: 'tertiarycolorPicker' };
+    const customHexIds = { eyecolor: 'customEyeHex', primarycolor: 'customPrimaryHex', secondarycolor: 'customSecondaryHex', tertiarycolor: 'customTertiaryHex' };
+    const customColorIds = { eyecolor: 'customEyeColor', primarycolor: 'customPrimaryColor', secondarycolor: 'customSecondaryColor', tertiarycolor: 'customTertiaryColor' };
 
     function getState() {
       const ids = ['eyeshape','tail','pattern','wings','mane','hornshape','eyecolor','primarycolor','secondarycolor','tertiarycolor'];
@@ -524,6 +556,7 @@
         if (state[r + 'ColorIndex'] != null) colorState[r + 'ColorIndex'] = state[r + 'ColorIndex'];
         if (state[r + 'ResolvedTheme'] != null) colorState[r + 'ResolvedTheme'] = state[r + 'ResolvedTheme'];
       });
+      colorRoles.forEach(role => syncPickerFromCustom(role));
     }
 
     function saveState() {
@@ -549,33 +582,90 @@
       document.getElementById('customSecondaryWrap').style.display = document.getElementById('secondarycolor').value === 'custom' ? 'grid' : 'none';
       document.getElementById('customTertiaryWrap').style.display = document.getElementById('tertiarycolor').value === 'custom' ? 'grid' : 'none';
       document.getElementById('customEyeWrap').style.display = document.getElementById('eyecolor').value === 'custom' ? 'grid' : 'none';
+      colorRoles.forEach(role => syncPickerFromCustom(role));
     }
 
     function syncColorInputs() {
       const pairs = [
-        ['customPrimaryColor','customPrimaryHex'],
-        ['customSecondaryColor','customSecondaryHex'],
-        ['customTertiaryColor','customTertiaryHex'],
-        ['customEyeColor','customEyeHex']
+        ['customPrimaryColor','customPrimaryHex','primarycolor'],
+        ['customSecondaryColor','customSecondaryHex','secondarycolor'],
+        ['customTertiaryColor','customTertiaryHex','tertiarycolor'],
+        ['customEyeColor','customEyeHex','eyecolor']
       ];
-      pairs.forEach(([colorId, hexId]) => {
+      pairs.forEach(([colorId, hexId, role]) => {
         const colorEl = document.getElementById(colorId);
         const hexEl = document.getElementById(hexId);
-        colorEl.addEventListener('input', () => { hexEl.value = colorEl.value; saveState(); render(); });
+        colorEl.addEventListener('focus', () => { stateBeforeColorChange = getState(); });
+        hexEl.addEventListener('focus', () => { stateBeforeColorChange = getState(); });
+        colorEl.addEventListener('input', () => {
+          if (stateBeforeColorChange) { stateHistory.push(stateBeforeColorChange); stateBeforeColorChange = null; updateBackButton(); }
+          hexEl.value = colorEl.value;
+          saveState();
+          render();
+        });
         hexEl.addEventListener('input', () => {
           const v = hexEl.value.replace(/^#/,'');
-          if (/^[0-9A-Fa-f]{6}$/.test(v)) { colorEl.value = '#' + v; saveState(); render(); }
+          if (/^[0-9A-Fa-f]{6}$/.test(v)) {
+            if (stateBeforeColorChange) { stateHistory.push(stateBeforeColorChange); stateBeforeColorChange = null; updateBackButton(); }
+            colorEl.value = '#' + v;
+            const pickerId = colorPickerIds[role];
+            if (pickerId) document.getElementById(pickerId).value = '#' + v;
+            saveState();
+            render();
+          }
         });
       });
     }
 
     document.querySelectorAll('select, #Eyelashes').forEach(el => {
+      const id = el.id;
+      if (colorRoles.includes(id)) {
+        el.addEventListener('mousedown', () => { stateBeforeColorChange = getState(); });
+        el.addEventListener('keydown', () => { stateBeforeColorChange = getState(); });
+      }
       el.addEventListener('change', () => {
-        const id = el.id;
+        if (colorRoles.includes(id) && stateBeforeColorChange) {
+          stateHistory.push(stateBeforeColorChange);
+          stateBeforeColorChange = null;
+          updateBackButton();
+        }
         if (colorRoles.includes(id)) {
           colorState[id + 'ColorIndex'] = 0;
           if (el.value !== 'Any') colorState[id + 'ResolvedTheme'] = null;
         }
+        toggleCustomColor();
+        syncPickerFromCustom(id);
+        saveState();
+        render();
+      });
+    });
+
+    function syncPickerFromCustom(role) {
+      if (document.getElementById(role).value !== 'custom') return;
+      const hexId = customHexIds[role], pickerId = colorPickerIds[role];
+      if (hexId && pickerId) {
+        const hex = document.getElementById(hexId).value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(hex)) document.getElementById(pickerId).value = hex;
+      }
+    }
+    function applyColorFromPicker(role) {
+      const picker = document.getElementById(colorPickerIds[role]);
+      const hexEl = document.getElementById(customHexIds[role]);
+      const colorEl = document.getElementById(customColorIds[role]);
+      if (!picker || !hexEl) return;
+      const hex = picker.value;
+      document.getElementById(role).value = 'custom';
+      hexEl.value = hex;
+      colorEl.value = hex;
+    }
+    colorRoles.forEach(role => {
+      const pickerId = colorPickerIds[role];
+      if (!pickerId) return;
+      const picker = document.getElementById(pickerId);
+      picker.addEventListener('input', () => {
+        stateHistory.push(getState());
+        updateBackButton();
+        applyColorFromPicker(role);
         toggleCustomColor();
         saveState();
         render();
