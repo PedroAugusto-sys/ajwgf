@@ -292,7 +292,14 @@
     const selects = D.selects;
     const layers = D.layers;
     const colorFilters = D.colorFilters;
+    const colorPalettes = D.colorPalettes || {};
     const themeToKey = { Amethyst: 'Amethyst_Wildflower', Cerulean: 'Cerulean_Sky', Dreamy: 'Dreamy_Lilac', Dusty: 'Dusty_Taupe', Earthy: 'Earthy_Umber', Flaxen: 'Flaxen_Ochre', Florid: 'Florid_Vermillion', Forested: 'Forested_Juniper', Hazel: 'Hazel_Olive', Lush: 'Lush_Berry', Misty: 'Misty_Starlight', Oceanic: 'Oceanic_Sapphire', Opulent: 'Opulent_Royalty', Pale: 'Pale_Pastel', Rosy: 'Rosy_Sunset', Russet: 'Russet_Mahogany', Seafoam: 'Seafoam_Lagoon', Shady: 'Shady_Dark', Smoky: 'Smoky_Dust', Sunny: 'Sunny_Amber', Verdant: 'Verdant_Lush', Vibrant: 'Vibrant_Neon', Warm: 'Warm_Tangerine' };
+    const allThemeKeys = Object.keys(colorPalettes).filter(k => Array.isArray(colorPalettes[k]) && colorPalettes[k].length > 0);
+    const colorRoles = ['primarycolor','secondarycolor','tertiarycolor','eyecolor'];
+    let colorState = {
+      primaryColorIndex: 0, secondaryColorIndex: 0, tertiaryColorIndex: 0, eyeColorIndex: 0,
+      primaryResolvedTheme: null, secondaryResolvedTheme: null, tertiaryResolvedTheme: null, eyeResolvedTheme: null
+    };
 
     function getE() {
       const v = document.getElementById('eyeshape').value;
@@ -325,15 +332,26 @@
       return D.hornOdds[v] ?? 0;
     }
 
+    function getThemeKeyFor(name) {
+      const val = document.getElementById(name).value;
+      if (val === 'Any') {
+        const resolved = colorState[name + 'ResolvedTheme'];
+        return resolved && colorPalettes[resolved] ? resolved : (allThemeKeys[0] || null);
+      }
+      return themeToKey[val] || null;
+    }
     function getFilterFor(name) {
-      let val = document.getElementById(name).value;
+      const val = document.getElementById(name).value;
       if (val === 'custom') {
         const hex = document.getElementById('custom' + (name === 'eyecolor' ? 'Eye' : name.replace('color','')) + 'Hex').value;
         return hexToFilter(hex);
       }
-      if (val === 'Any') val = 'Amethyst';
-      const key = themeToKey[val];
-      return colorFilters[key] || 'none';
+      const key = getThemeKeyFor(name);
+      const pal = key && colorPalettes[key];
+      if (!pal || !pal.length) return colorFilters[key] || 'none';
+      let idx = colorState[name + 'ColorIndex'];
+      if (idx == null || idx >= pal.length) idx = 0;
+      return pal[idx];
     }
 
     function hexToFilter(hex) {
@@ -462,6 +480,10 @@
       state.customSecondaryHex = document.getElementById('customSecondaryHex').value;
       state.customTertiaryHex = document.getElementById('customTertiaryHex').value;
       state.customEyeHex = document.getElementById('customEyeHex').value;
+      colorRoles.forEach(r => {
+        state[r + 'ColorIndex'] = colorState[r + 'ColorIndex'];
+        state[r + 'ResolvedTheme'] = colorState[r + 'ResolvedTheme'];
+      });
       return state;
     }
 
@@ -498,6 +520,10 @@
         document.getElementById('customEyeHex').value = hex;
         document.getElementById('customEyeColor').value = hex;
       }
+      colorRoles.forEach(r => {
+        if (state[r + 'ColorIndex'] != null) colorState[r + 'ColorIndex'] = state[r + 'ColorIndex'];
+        if (state[r + 'ResolvedTheme'] != null) colorState[r + 'ResolvedTheme'] = state[r + 'ResolvedTheme'];
+      });
     }
 
     function saveState() {
@@ -544,7 +570,16 @@
     }
 
     document.querySelectorAll('select, #Eyelashes').forEach(el => {
-      el.addEventListener('change', () => { toggleCustomColor(); saveState(); render(); });
+      el.addEventListener('change', () => {
+        const id = el.id;
+        if (colorRoles.includes(id)) {
+          colorState[id + 'ColorIndex'] = 0;
+          if (el.value !== 'Any') colorState[id + 'ResolvedTheme'] = null;
+        }
+        toggleCustomColor();
+        saveState();
+        render();
+      });
     });
     document.getElementById('randomBtn').addEventListener('click', () => {
       stateHistory.push(getState());
@@ -563,10 +598,20 @@
     document.getElementById('colorsBtn').addEventListener('click', () => {
       stateHistory.push(getState());
       updateBackButton();
-      ['eyecolor','primarycolor','secondarycolor','tertiarycolor'].forEach(id => {
-        const sel = document.getElementById(id);
-        const opts = selects[id];
-        sel.value = opts[Math.floor(Math.random() * opts.length)];
+      colorRoles.forEach(id => {
+        const val = document.getElementById(id).value;
+        if (val === 'custom') return;
+        let themeKey;
+        if (val === 'Any') {
+          themeKey = allThemeKeys[Math.floor(Math.random() * allThemeKeys.length)];
+          colorState[id + 'ResolvedTheme'] = themeKey;
+        } else {
+          themeKey = themeToKey[val];
+        }
+        const pal = themeKey && colorPalettes[themeKey];
+        if (pal && pal.length) {
+          colorState[id + 'ColorIndex'] = Math.floor(Math.random() * pal.length);
+        }
       });
       toggleCustomColor();
       saveState();
