@@ -536,6 +536,8 @@
       const secondaryF = getSecondaryFilter();
       const tertiaryF = getTertiaryFilter();
       const eyeF = getEyeFilter();
+      const bodyPattern = getB();
+      const swapSecondaryTertiary = bodyPattern === 7;
 
       const resolved = [];
       layers.forEach(layer => {
@@ -543,8 +545,8 @@
         if (!res || !res.url) return;
         let filter = 'none';
         if (res.filter === 'main') filter = mainF;
-        else if (res.filter === 'secondary') filter = secondaryF;
-        else if (res.filter === 'tertiary') filter = tertiaryF;
+        else if (res.filter === 'secondary') filter = swapSecondaryTertiary ? tertiaryF : secondaryF;
+        else if (res.filter === 'tertiary') filter = swapSecondaryTertiary ? secondaryF : tertiaryF;
         else if (res.filter === 'eye') filter = eyeF;
         resolved.push({ url: res.url, filter });
       });
