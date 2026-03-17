@@ -74,7 +74,7 @@ window.AJDRAGON_DATA = {
       { cond: 0, url: null },
       { cond: 1, url: 'https://user-uploads.perchance.org/file/c2242e37964d0d0b6ad24665d95c63f6.webp' }
     ]},
-    { name: 'Wingpattern', filter: 'secondary', options: [
+    { name: 'Wingpattern', filter: 'tertiary', options: [
       { cond: 8, url: null },
       { cond: 7, url: 'https://user-uploads.perchance.org/file/954ae19d99f6bdfe61b600b8629c937b.webp' },
       { cond: 3, url: 'https://user-uploads.perchance.org/file/f6659fb0f79894e048ef83796522d6d0.webp' },
@@ -84,7 +84,7 @@ window.AJDRAGON_DATA = {
       { cond: 5, url: 'https://user-uploads.perchance.org/file/4f38b60dc32af7027420c30bc6bf55b8.webp' },
       { cond: 1, url: null }
     ]},
-    { name: 'Wings', filter: 'tertiary', options: [
+    { name: 'Wings', filter: 'secondary', options: [
       { cond: 1, url: 'https://user-uploads.perchance.org/file/3fd58a0928966192b15d3ba9ffe5ea14.webp' },
       { cond: 2, url: 'https://user-uploads.perchance.org/file/fa7e765b19fd135f30628bb64effdf9a.webp' },
       { cond: 3, url: 'https://user-uploads.perchance.org/file/6439294a064dcfc05833b522787a2556.webp' },
