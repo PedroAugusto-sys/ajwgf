@@ -543,10 +543,12 @@
       layers.forEach(layer => {
         const res = resolveLayer(layer);
         if (!res || !res.url) return;
+        const isBodyPatternLayer = layer.name === 'Pattern' || layer.name === 'Pattern2';
+        const useSwap = swapSecondaryTertiary && isBodyPatternLayer;
         let filter = 'none';
         if (res.filter === 'main') filter = mainF;
-        else if (res.filter === 'secondary') filter = swapSecondaryTertiary ? tertiaryF : secondaryF;
-        else if (res.filter === 'tertiary') filter = swapSecondaryTertiary ? secondaryF : tertiaryF;
+        else if (res.filter === 'secondary') filter = useSwap ? tertiaryF : secondaryF;
+        else if (res.filter === 'tertiary') filter = useSwap ? secondaryF : tertiaryF;
         else if (res.filter === 'eye') filter = eyeF;
         resolved.push({ url: res.url, filter });
       });

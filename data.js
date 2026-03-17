@@ -102,7 +102,7 @@ window.AJDRAGON_DATA = {
       { cond: 7, url: 'https://user-uploads.perchance.org/file/efac00885dd75df6428dde1bac2ea4e6.webp' },
       { cond: 2, url: 'https://user-uploads.perchance.org/file/752a1ab08259f2a8352ec1890b850214.webp' }
     ]},
-    { name: 'Hornpattern', filter: 'secondary', options: [
+    { name: 'Hornpattern', filter: 'tertiary', options: [
       { cond: 0, url: null },
       { cond: 5, url: 'https://user-uploads.perchance.org/file/baea1cf2116be44cd65f584bea59b5f1.webp' }
     ]},
